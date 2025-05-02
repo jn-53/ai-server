@@ -32,7 +32,7 @@ def load_locations(json_file):
 #             best_score = score
 #             best_location = loc
 #     return best_location, best_score
-def best_match(input_name, locations, threshold=0.3):
+def best_match(input_name, locations, threshold=0.25):
     best_score = -1  # Jaccard越大越好
     best_location = None
 

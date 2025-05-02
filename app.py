@@ -1,9 +1,14 @@
+import subprocess
 from langchain.prompts import PromptTemplate
 from langchain.memory import ConversationBufferMemory
-from langchain.llms import Ollama  # 假设你用的是本地ollama
+from langchain.llms import Ollama
 from langchain.chains import ConversationChain
-from langchain.callbacks import StreamingStdOutCallbackHandler  # 导入标准回调
+from langchain_core.callbacks.base import BaseCallbackHandler
 import copy
+import re
+import threading
+import queue
+
 
 # 1. 创建 Ollama LLM
 llm = Ollama(
@@ -47,13 +52,41 @@ conversation = ConversationChain(
 )
 
 
-# 设置一个标准回调处理流式输出
-streaming_callback = StreamingStdOutCallbackHandler()
+class StreamingSayCallbackHandler(BaseCallbackHandler):
+    def __init__(self, voice="Meijia (Premium)"):
+        self.current_text = ""
+        self.voice = voice
+        self.speak_queue = queue.Queue()
+        self.speaker_thread = threading.Thread(target=self._speaker_worker, daemon=True)
+        self.speaker_thread.start()
 
+    def _speaker_worker(self):
+        while True:
+            text = self.speak_queue.get()
+            if text is None:
+                break
+            subprocess.run(["say", "-v", self.voice, text])  # ✅ 这里改成同步run，等说完
+            self.speak_queue.task_done()
+
+    def on_llm_new_token(self, token: str, **kwargs):
+        print(token, end="", flush=True)
+        self.current_text += token
+        if re.search(r"[。！？]", token):  # 中文句号/问号/叹号，表示一句话结束
+            sentence = self.current_text.strip()
+            if sentence:
+                self.speak_queue.put(sentence)
+            self.current_text = ""
+
+    def close(self):
+        self.speak_queue.put(None)
+        self.speaker_thread.join()
+
+# 使用这个新的回调
+streaming_callback = StreamingSayCallbackHandler()
 
 last_memory = None
 last_user_question = None
-# 5. 启动对话
+
 print("💬 欢迎使用对话助手！输入 'exit' 结束对话，输入 'retry' 回滚到上一次的对话状态。")
 while True:
     user_input = input("用户：")
@@ -63,20 +96,17 @@ while True:
 
     if user_input.lower() == "retry":
         if last_user_question:
-            # 恢复到上一次保存的状态
             print("🔄 正在回滚到之前的对话状态...")
             memory.chat_memory = last_memory
-            # 再次用上一次的问题重新发
             user_input = last_user_question
         else:
             print("⚠️ 没有可以回滚的历史记录！")
 
-    # 记录当前 memory snapshot
     last_memory = copy.deepcopy(memory.chat_memory)
-
-    # 记下当前问题（为了重新回答时可以用）
     last_user_question = user_input
 
-    # 正常发问题
-    conversation.predict(input=user_input, callbacks=[streaming_callback])  # 使用回调处理流式输出
-    print()  # 换行
+    streaming_callback.current_text = ""  # 清空
+
+    conversation.predict(input=user_input, callbacks=[streaming_callback])
+
+    print()
