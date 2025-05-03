@@ -9,6 +9,8 @@ import re
 import threading
 import queue
 
+from say import TTSPlayer
+
 
 # 1. 创建 Ollama LLM
 llm = Ollama(
@@ -53,9 +55,9 @@ conversation = ConversationChain(
 
 
 class StreamingSayCallbackHandler(BaseCallbackHandler):
-    def __init__(self, voice="Meijia (Premium)"):
+    def __init__(self, tts_player: TTSPlayer):
         self.current_text = ""
-        self.voice = voice
+        self.tts_player = tts_player
         self.speak_queue = queue.Queue()
         self.speaker_thread = threading.Thread(target=self._speaker_worker, daemon=True)
         self.speaker_thread.start()
@@ -65,7 +67,8 @@ class StreamingSayCallbackHandler(BaseCallbackHandler):
             text = self.speak_queue.get()
             if text is None:
                 break
-            subprocess.run(["say", "-v", self.voice, text])  # ✅ 这里改成同步run，等说完
+            # subprocess.run(["say", "-v", self.voice, text])  # ✅ 这里改成同步run，等说完
+            self.tts_player.speak(text)
             self.speak_queue.task_done()
 
     def on_llm_new_token(self, token: str, **kwargs):
@@ -82,7 +85,7 @@ class StreamingSayCallbackHandler(BaseCallbackHandler):
         self.speaker_thread.join()
 
 # 使用这个新的回调
-streaming_callback = StreamingSayCallbackHandler()
+streaming_callback = StreamingSayCallbackHandler(TTSPlayer())
 
 last_memory = None
 last_user_question = None

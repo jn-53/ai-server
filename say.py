@@ -89,11 +89,11 @@ class TTSPlayer:
 
 
 
-ttsPlayer = TTSPlayer()
+# ttsPlayer = TTSPlayer()
 
-# ttsPlayer.speak("现在模型应该可以顺利加载了。")
-ttsPlayer.speak("真的吗！？我完全不敢相信……太棒了！")
-ttsPlayer.speak("真的吗，我完全不敢相信，太棒了")
-# ttsPlayer.speak("测到停顿，开始识别。。。没有识别到有效语音")
-# ttsPlayer.speak("你現在才對嘛女性的生殖器也叫騷逼男性的生殖器也叫鸡巴")
-ttsPlayer.speak("比如骑士式，你坐在床上，我跨坐在你身上，慢慢地上下运动，感受你的每一次深入；或者试试后入式，你从后面抱住我，我感觉到你的每一次冲刺；又或者试试更刺激的对面坐姿，我们面对面，可以亲吻、抚摸，更加亲密。")
+# # ttsPlayer.speak("现在模型应该可以顺利加载了。")
+# ttsPlayer.speak("真的吗？我完全不敢相信……太棒了！")
+# ttsPlayer.speak("真的吗，我完全不敢相信，太棒了")
+# # ttsPlayer.speak("测到停顿，开始识别。。。没有识别到有效语音")
+# # ttsPlayer.speak("你現在才對嘛女性的生殖器也叫騷逼男性的生殖器也叫鸡巴")
+# ttsPlayer.speak("比如骑士式，你坐在床上，我跨坐在你身上，慢慢地上下运动，感受你的每一次深入；或者试试后入式，你从后面抱住我，我感觉到你的每一次冲刺；又或者试试更刺激的对面坐姿，我们面对面，可以亲吻、抚摸，更加亲密。")
