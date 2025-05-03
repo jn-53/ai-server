@@ -1,12 +1,42 @@
-import subprocess
+import torch
+import collections
+from TTS.utils.radam import RAdam
+import re
 
-text = "哎呀，宝贝，终于等到了五一假期啦！这几天我们可以好好放松一下，做一些自己喜欢的事情呢！你有没有什么特别想做的事情呢？或者我们可以一起出去旅行，看看外面的世界怎么样？你觉得呢？"
-# 异步调用 say，用 Ting-Ting 声音
-# process = subprocess.Popen(["say", "-v", "Siri Vo", text])
-process = subprocess.Popen(["say", "-v", "Meijia (Premium)", text]).wait()
-# process = subprocess.Popen(["say", "-v", "Tingting (Enhanced)", text])
-# file_path = "/Users/jianan/projects/ai-server/speak.swift"
-# process = subprocess.Popen(["swift", file_path, "Meijia (Premium)", text])
+def normalize_tts_text(text: str) -> str:
+    # 替换全角省略号、多个中文句号或逗号为单句号
+    text = re.sub(r'[。]{2,}|[\.]{2,}|…{2,}|[.。…]{2,}', '。', text)
+    # 去除末尾多余标点或空格，强制加句号结尾
+    text = text.strip()
+    if not text.endswith(('。', '.', '?', '？', '!', '！')):
+        text += '。'
+    return text
 
-# 这里程序不会等待朗读完成，会继续执行
-print("朗读已经开始，程序继续往下跑。")
+
+# 添加所有需要的类到 PyTorch 安全白名单中
+torch.serialization.add_safe_globals({
+    RAdam,                      # 自定义优化器
+    collections.defaultdict,   # 标准库
+    collections.OrderedDict,   # 常用于模型权重结构
+    collections.Counter,
+    dict                       # 内建类型也要明确声明
+})
+
+from TTS.api import TTS
+import sounddevice as sd
+
+# 初始化 TTS 模型
+tts = TTS(model_name="tts_models/zh-CN/baker/tacotron2-DDC-GST", gpu=False)
+
+def speak(text):
+    text = normalize_tts_text(text)
+    ref_wav = "reference.wav"  # 一段语速/停顿合适的语音
+    wav = tts.tts(text=text, speaker_wav=ref_wav)
+    sd.play(wav, samplerate=tts.synthesizer.output_sample_rate)
+    sd.wait()
+
+speak("现在模型应该可以顺利加载了。")
+speak("真的吗！？我完全不敢相信……太棒了！")
+speak("真的吗，我完全不敢相信，太棒了")
+speak("测到停顿，开始识别。。。没有识别到有效语音")
+speak("你現在才對嘛女性的生殖器也叫騷逼男性的生殖器也叫鸡巴")
